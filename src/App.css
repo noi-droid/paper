@@ -37,6 +37,10 @@
   cursor: inherit;
   word-break: break-word;
   opacity: 0.88;
+  /* Ink bleed — subtle print feel */
+  text-shadow:
+    0 0 0.3px currentColor,
+    0 0.4px 0.8px rgba(0, 0, 0, 0.04);
 }
 
 .layer-text.editing {
@@ -58,7 +62,23 @@
 /* ── Layer styles ── */
 .layer-paper {
   padding: 48px 52px;
-  background-color: rgba(255, 255, 255, 0.38);
+  background:
+    radial-gradient(ellipse at 25% 20%, rgba(255,255,255,0.05) 0%, transparent 55%),
+    linear-gradient(160deg, rgba(255,255,255,0.03) 0%, transparent 35%, rgba(0,0,0,0.018) 100%),
+    rgba(255, 255, 255, 0.38);
+}
+
+/* Subtle paper grain — SVG noise */
+.layer-paper::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 300px 300px;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 
