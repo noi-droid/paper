@@ -12,6 +12,12 @@ const randomTex = () => ({
   texY: Math.round(Math.random() * 100),
 })
 
+// SVG mask for torn bottom edge — unique per seed
+const tornMask = (seed) => {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none' viewBox='0 0 200 100'><defs><filter id='t' filterUnits='userSpaceOnUse' x='0' y='55' width='200' height='55'><feTurbulence type='turbulence' baseFrequency='0.015 0.04' numOctaves='5' seed='${seed}' result='noise'/><feDisplacementMap in='SourceGraphic' in2='noise' scale='35' xChannelSelector='R' yChannelSelector='G'/></filter></defs><rect width='200' height='85' fill='white'/><rect y='70' width='200' height='22' fill='white' filter='url(#t)'/></svg>`
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`
+}
+
 const INITIAL_LAYERS = [
   {
     id: 1,
@@ -496,48 +502,61 @@ function App() {
             onPointerDown={(e) => handlePointerDown(e, layer.id)}
             onDoubleClick={(e) => handleDoubleClick(e, layer.id)}
           >
-            {layer.type === 'video' && (
-              <div className="layer-content layer-video">
-                <video
-                  src={layer.src}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                />
-              </div>
-            )}
+            {/* Visual wrapper — torn mask clips this, NOT the bbox */}
+            <div
+              className="layer-visual"
+              style={layer.torn ? {
+                WebkitMaskImage: tornMask(layer.id),
+                maskImage: tornMask(layer.id),
+                WebkitMaskSize: '100% 100%',
+                maskSize: '100% 100%',
+              } : undefined}
+            >
+              <div className="paper-bg" />
 
-            {layer.type === 'image' && (
-              <div className="layer-content layer-image">
-                <img src={layer.src} alt="" draggable={false} />
-              </div>
-            )}
+              {layer.type === 'video' && (
+                <div className="layer-content layer-video">
+                  <video
+                    src={layer.src}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                </div>
+              )}
 
-            {layer.type === 'text' && (
-              <div
-                className={`layer-content layer-text ${isEditing ? 'editing' : ''} ${layer.textColor === '#fff' ? 'text-white' : ''}`}
-                contentEditable={isEditing}
-                suppressContentEditableWarning
-                style={{
-                  fontSize: `${layer.fontSize}px`,
-                  letterSpacing: `${layer.letterSpacing}px`,
-                  lineHeight: layer.lineHeight,
-                  whiteSpace: 'pre-wrap',
-                  color: layer.textColor || '#0a0a0a',
-                }}
-                onBlur={(e) => {
-                  updateLayer(layer.id, { text: e.currentTarget.textContent })
-                }}
-                onPointerDown={(e) => {
-                  if (isEditing) e.stopPropagation()
-                }}
-              >
-                {layer.text}
-              </div>
-            )}
+              {layer.type === 'image' && (
+                <div className="layer-content layer-image">
+                  <img src={layer.src} alt="" draggable={false} />
+                </div>
+              )}
 
-            {/* Bounding box */}
+              {layer.type === 'text' && (
+                <div
+                  className={`layer-content layer-text ${isEditing ? 'editing' : ''} ${layer.textColor === '#fff' ? 'text-white' : ''}`}
+                  contentEditable={isEditing}
+                  suppressContentEditableWarning
+                  style={{
+                    fontSize: `${layer.fontSize}px`,
+                    letterSpacing: `${layer.letterSpacing}px`,
+                    lineHeight: layer.lineHeight,
+                    whiteSpace: 'pre-wrap',
+                    color: layer.textColor || '#0a0a0a',
+                  }}
+                  onBlur={(e) => {
+                    updateLayer(layer.id, { text: e.currentTarget.textContent })
+                  }}
+                  onPointerDown={(e) => {
+                    if (isEditing) e.stopPropagation()
+                  }}
+                >
+                  {layer.text}
+                </div>
+              )}
+            </div>
+
+            {/* Bounding box — outside layer-visual, not affected by torn mask */}
             {isSelected && !isEditing && (
               <div className="bbox">
                 {HANDLES.map((h) => (
@@ -623,6 +642,17 @@ function App() {
                 style={{ background: selectedLayer.textColor || '#0a0a0a' }}
               />
               {(selectedLayer.textColor || '#0a0a0a') === '#fff' ? 'White' : 'Black'}
+            </button>
+          </div>
+          <div className="typo-row">
+            <label>Edge</label>
+            <button
+              className="color-toggle"
+              onClick={() =>
+                updateLayer(selected, { torn: !selectedLayer.torn })
+              }
+            >
+              {selectedLayer.torn ? 'Torn' : 'Clean'}
             </button>
           </div>
         </div>
