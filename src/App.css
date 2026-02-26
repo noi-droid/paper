@@ -22,21 +22,6 @@
   cursor: grabbing;
 }
 
-/* Subtle paper grain */
-.layer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-/* Uneven opacity gradient */
-.layer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
 
 /* ── Layer content ── */
 .layer-content {
@@ -56,6 +41,18 @@
 
 .layer-text.editing {
   cursor: text;
+  user-select: text;
+}
+
+/* Text selection — R200 G255 with inverted text */
+.layer-text::selection {
+  background: rgb(200, 255, 0);
+  color: #fff;
+}
+
+.layer-text.text-white::selection {
+  background: rgb(200, 255, 0);
+  color: #000;
 }
 
 /* ── Layer styles ── */
@@ -64,14 +61,6 @@
   background-color: rgba(255, 255, 255, 0.38);
 }
 
-.layer-paper::after {
-  background: linear-gradient(
-    160deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.01) 100%
-  );
-}
 
 /* ── Media layers (video/image) ── */
 .layer-media {
@@ -79,14 +68,6 @@
   background-color: rgba(255, 255, 255, 0.3);
 }
 
-.layer-media::after {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.02) 0%,
-    transparent 30%,
-    rgba(0, 0, 0, 0.008) 100%
-  );
-}
 
 /* ── Image layers (raw / PNG transparency) ── */
 .layer.layer-image-raw {
@@ -96,10 +77,6 @@
   padding: 0;
 }
 
-.layer.layer-image-raw::before,
-.layer.layer-image-raw::after {
-  display: none;
-}
 
 .layer-video,
 .layer-image {

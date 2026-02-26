@@ -484,7 +484,7 @@ function App() {
 
             {layer.type === 'text' && (
               <div
-                className={`layer-content layer-text ${isEditing ? 'editing' : ''}`}
+                className={`layer-content layer-text ${isEditing ? 'editing' : ''} ${layer.textColor === '#fff' ? 'text-white' : ''}`}
                 contentEditable={isEditing}
                 suppressContentEditableWarning
                 style={{
