@@ -1,42 +1,342 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.canvas {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  cursor: default;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* ── Tracing paper base ── */
+.layer {
+  position: absolute;
+  border-radius: 0;
+  user-select: none;
+  cursor: grab;
+  background-color: rgba(255, 255, 255, 0.38);
+
+  /* Tracing paper blur — only blurs what's beneath this layer */
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.layer.dragging {
+  cursor: grabbing;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Subtle paper grain */
+.layer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-.card {
-  padding: 2em;
+/* Uneven opacity gradient */
+.layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-.read-the-docs {
-  color: #888;
+/* ── Layer content ── */
+.layer-content {
+  position: relative;
+  z-index: 1;
+  font-family: 'OTRGrotesk', sans-serif;
+}
+
+/* ── Text layer ── */
+.layer-text {
+  color: #0a0a0a;
+  outline: none;
+  cursor: inherit;
+  word-break: break-word;
+  opacity: 0.88;
+}
+
+.layer-text.editing {
+  cursor: text;
+}
+
+/* ── Layer styles ── */
+.layer-paper {
+  padding: 48px 52px;
+  background-color: rgba(255, 255, 255, 0.38);
+}
+
+.layer-paper::after {
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.01) 100%
+  );
+}
+
+/* ── Media layers (video/image) ── */
+.layer-media {
+  padding: 0;
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.layer-media::after {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    transparent 30%,
+    rgba(0, 0, 0, 0.008) 100%
+  );
+}
+
+/* ── Image layers (raw / PNG transparency) ── */
+.layer.layer-image-raw {
+  background-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+}
+
+.layer.layer-image-raw::before,
+.layer.layer-image-raw::after {
+  display: none;
+}
+
+.layer-video,
+.layer-image {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.layer-video video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0.88;
+}
+
+.layer-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Z-index for active layer */
+.layer.active {
+  z-index: 100;
+}
+
+/* ── Bounding box ── */
+.bbox {
+  position: absolute;
+  inset: -1px;
+  border: 1px solid rgb(200, 255, 0);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.bbox-handle {
+  position: absolute;
+  background: rgb(200, 255, 0);
+  pointer-events: auto;
+  z-index: 11;
+}
+
+/* Corner handles — 8×8 */
+.bbox-handle-nw,
+.bbox-handle-ne,
+.bbox-handle-se,
+.bbox-handle-sw {
+  width: 8px;
+  height: 8px;
+}
+
+.bbox-handle-nw { top: -4px; left: -4px; }
+.bbox-handle-ne { top: -4px; right: -4px; }
+.bbox-handle-se { bottom: -4px; right: -4px; }
+.bbox-handle-sw { bottom: -4px; left: -4px; }
+
+/* Edge midpoint handles — 6×8 or 8×6 */
+.bbox-handle-n,
+.bbox-handle-s {
+  width: 8px;
+  height: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bbox-handle-n { top: -3px; }
+.bbox-handle-s { bottom: -3px; }
+
+.bbox-handle-e,
+.bbox-handle-w {
+  width: 6px;
+  height: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.bbox-handle-e { right: -3px; }
+.bbox-handle-w { left: -3px; }
+
+/* ── Rotation handle ── */
+.bbox-rotate-line {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 25px;
+  background: rgb(200, 255, 0);
+  pointer-events: none;
+  z-index: 11;
+}
+
+.bbox-rotate-handle {
+  position: absolute;
+  top: -37px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgb(200, 255, 0);
+  background: transparent;
+  cursor: grab;
+  pointer-events: auto;
+  z-index: 12;
+  transition: background 0.12s ease;
+}
+
+.bbox-rotate-handle:hover {
+  background: rgba(200, 255, 0, 0.35);
+}
+
+.bbox-rotate-handle:active {
+  cursor: grabbing;
+  background: rgba(200, 255, 0, 0.5);
+}
+
+/* ── Add layer toolbar ── */
+.toolbar {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 9999;
+  font-family: 'OTRGrotesk', sans-serif;
+}
+
+.toolbar button {
+  background: rgba(24, 24, 24, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.toolbar button:hover {
+  background: rgba(40, 40, 40, 0.95);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Hidden file input */
+.toolbar input[type="file"] {
+  display: none;
+}
+
+/* ── Control panel ── */
+.typo-panel {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(24, 24, 24, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 16px 24px;
+  display: flex;
+  gap: 28px;
+  z-index: 9999;
+  font-family: 'OTRGrotesk', sans-serif;
+}
+
+.typo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.typo-row label {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  min-width: 52px;
+}
+
+.typo-row input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 1px;
+  outline: none;
+}
+
+.typo-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+.typo-value {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Color toggle ── */
+.color-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.color-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.color-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
