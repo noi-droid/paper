@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import './App.css'
 
 const DEFAULT_TYPO = {
@@ -126,6 +126,7 @@ function App() {
   const maxZ = useRef(4)
   const imageInputRef = useRef(null)
   const videoInputRef = useRef(null)
+  const clipboard = useRef(null)
 
   const updateLayer = useCallback((id, updates) => {
     setLayers((prev) =>
@@ -372,6 +373,39 @@ function App() {
     setEditing(id)
     setSelected(id)
   }, [layers])
+
+  // ── Copy & Paste (Ctrl/Cmd + C / V) ──
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (editing) return // don't hijack while editing text
+      const mod = e.metaKey || e.ctrlKey
+
+      if (mod && e.key === 'c' && selected) {
+        const layer = layers.find((l) => l.id === selected)
+        if (layer) clipboard.current = { ...layer }
+      }
+
+      if (mod && e.key === 'v' && clipboard.current) {
+        const src = clipboard.current
+        maxZ.current += 1
+        const id = nextId++
+        const copy = {
+          ...src,
+          id,
+          x: src.x + 20,
+          y: src.y + 20,
+          z: maxZ.current,
+          ...randomTex(),
+        }
+        setLayers((prev) => [...prev, copy])
+        setSelected(id)
+        // shift clipboard so next paste offsets again
+        clipboard.current = { ...copy }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selected, editing, layers])
 
   const selectedLayer = layers.find((l) => l.id === selected)
   const isTextLayer = selectedLayer?.type === 'text'
