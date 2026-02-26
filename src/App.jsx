@@ -385,6 +385,12 @@ function App() {
         if (layer) clipboard.current = { ...layer }
       }
 
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selected) {
+        e.preventDefault()
+        setLayers((prev) => prev.filter((l) => l.id !== selected))
+        setSelected(null)
+      }
+
       if (mod && e.key === 'v' && clipboard.current) {
         const src = clipboard.current
         maxZ.current += 1
