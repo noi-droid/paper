@@ -160,9 +160,7 @@ function App() {
     setSelected(id)
   }, [])
 
-  const addImageLayer = useCallback((e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const addImageFromFile = useCallback((file, dropX, dropY) => {
     const url = URL.createObjectURL(file)
     maxZ.current += 1
     const id = nextId++
@@ -171,12 +169,14 @@ function App() {
       const aspect = img.naturalWidth / img.naturalHeight
       const w = 400
       const h = Math.round(w / aspect)
+      const x = dropX != null ? dropX - w / 2 : 100 + Math.random() * 200
+      const y = dropY != null ? dropY - h / 2 : 80 + Math.random() * 200
       setLayers((prev) => [
         ...prev,
         {
           id,
-          x: 100 + Math.random() * 200,
-          y: 80 + Math.random() * 200,
+          x,
+          y,
           z: maxZ.current,
           width: w,
           height: h,
@@ -191,21 +191,20 @@ function App() {
       setSelected(id)
     }
     img.src = url
-    e.target.value = ''
   }, [])
 
-  const addVideoLayer = useCallback((e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const addVideoFromFile = useCallback((file, dropX, dropY) => {
     const url = URL.createObjectURL(file)
     maxZ.current += 1
     const id = nextId++
+    const x = dropX != null ? dropX - 200 : 100 + Math.random() * 200
+    const y = dropY != null ? dropY - 140 : 80 + Math.random() * 200
     setLayers((prev) => [
       ...prev,
       {
         id,
-        x: 100 + Math.random() * 200,
-        y: 80 + Math.random() * 200,
+        x,
+        y,
         z: maxZ.current,
         width: 400,
         height: 280,
@@ -217,7 +216,37 @@ function App() {
       },
     ])
     setSelected(id)
+  }, [])
+
+  // File input wrappers
+  const addImageLayer = useCallback((e) => {
+    const file = e.target.files?.[0]
+    if (file) addImageFromFile(file)
     e.target.value = ''
+  }, [addImageFromFile])
+
+  const addVideoLayer = useCallback((e) => {
+    const file = e.target.files?.[0]
+    if (file) addVideoFromFile(file)
+    e.target.value = ''
+  }, [addVideoFromFile])
+
+  // ── Drag & drop files onto canvas ──
+  const handleDrop = useCallback((e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const files = [...e.dataTransfer.files]
+    files.forEach((file) => {
+      if (file.type.startsWith('image/')) {
+        addImageFromFile(file, e.clientX, e.clientY)
+      } else if (file.type.startsWith('video/')) {
+        addVideoFromFile(file, e.clientX, e.clientY)
+      }
+    })
+  }, [addImageFromFile, addVideoFromFile])
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault()
   }, [])
 
   // ── Drag (move) ──
@@ -424,6 +453,8 @@ function App() {
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
       onClick={handleCanvasClick}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
     >
       {/* Add layer toolbar */}
       <div className="toolbar" onClick={(e) => e.stopPropagation()}>
