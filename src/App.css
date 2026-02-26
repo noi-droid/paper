@@ -158,6 +158,20 @@
 .bbox-handle-e { right: -3px; }
 .bbox-handle-w { left: -3px; }
 
+/* ── Filename label ── */
+.bbox-filename {
+  position: absolute;
+  bottom: -22px;
+  left: 0;
+  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: rgb(200, 255, 0);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 11;
+}
+
 /* ── Rotation handle ── */
 .bbox-rotate-line {
   position: absolute;

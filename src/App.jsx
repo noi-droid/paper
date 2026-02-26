@@ -184,6 +184,7 @@ function App() {
           className: 'layer-image-raw',
           type: 'image',
           src: url,
+          filename: file.name,
           ...randomTex(),
         },
       ])
@@ -522,6 +523,9 @@ function App() {
                   className="bbox-rotate-handle"
                   onPointerDown={(e) => handleRotateDown(e, layer.id)}
                 />
+                {layer.filename && (
+                  <span className="bbox-filename">{layer.filename}</span>
+                )}
               </div>
             )}
           </div>
